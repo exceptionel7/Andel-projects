@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Star, ShoppingCart, Zap, Truck, Shield, ChevronDown, ChevronUp } from 'lucide-react';
 import { useCartStore } from '@/lib/store';
 import { formatPrice } from '@/lib/format';
+import { retailPrice } from '@/lib/pricing';
 
 export default function ProductDetail({ product, shippingUS, shippingCA }) {
   const addItem = useCartStore((s) => s.addItem);
@@ -27,8 +28,9 @@ export default function ProductDetail({ product, shippingUS, shippingCA }) {
   const [quantity, setQuantity] = useState(1);
   const [addedMsg, setAddedMsg] = useState(false);
 
-  const price = parseFloat(selectedVariant?.variantSellPrice || product.sellPrice || 0);
-  const originalPrice = parseFloat(selectedVariant?.variantOriginalPrice || product.originalPrice || 0);
+  // Retail (customer-facing) prices, including your profit margin.
+  const price = retailPrice(selectedVariant?.variantSellPrice || product.sellPrice) ?? 0;
+  const originalPrice = retailPrice(selectedVariant?.variantOriginalPrice || product.originalPrice) ?? 0;
   const discount = originalPrice > price
     ? Math.round(((originalPrice - price) / originalPrice) * 100)
     : null;
