@@ -6,16 +6,20 @@ import { useState, useEffect } from 'react';
 import { ShoppingCart, Search, Menu, X } from 'lucide-react';
 import { useCartStore } from '@/lib/store';
 
-const categories = [
-  { name: 'Electronics', href: '/products?category=electronics' },
-  { name: 'Fashion', href: '/products?category=fashion' },
-  { name: 'Home & Garden', href: '/products?category=home' },
-  { name: 'Sports', href: '/products?category=sports' },
-  { name: 'Beauty', href: '/products?category=beauty' },
-  { name: 'Toys', href: '/products?category=toys' },
+// Fallback tabs shown only if the CJ category tree can't be loaded.
+const FALLBACK_CATEGORIES = [
+  { name: 'Electronics', slug: 'electronics' },
+  { name: 'Fashion', slug: 'fashion' },
+  { name: 'Home & Garden', slug: 'home-garden' },
+  { name: 'Sports', slug: 'sports' },
+  { name: 'Beauty', slug: 'beauty' },
+  { name: 'Toys', slug: 'toys' },
 ];
 
-export default function Navbar() {
+export default function Navbar({ categories = [] }) {
+  // Use the real CJ categories when available, otherwise the fallback list.
+  const navCategories = categories.length > 0 ? categories : FALLBACK_CATEGORIES;
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -154,10 +158,10 @@ export default function Navbar() {
           <Link href="/products" className="whitespace-nowrap hover:text-[#FF9900] transition-colors font-medium">
             All Products
           </Link>
-          {categories.map((cat) => (
+          {navCategories.map((cat) => (
             <Link
-              key={cat.name}
-              href={cat.href}
+              key={cat.slug}
+              href={`/products?category=${cat.slug}`}
               className="whitespace-nowrap hover:text-[#FF9900] transition-colors"
             >
               {cat.name}
@@ -173,10 +177,10 @@ export default function Navbar() {
             <Link href="/products" className="block py-2 text-sm font-medium hover:text-[#FF9900]">
               All Products
             </Link>
-            {categories.map((cat) => (
+            {navCategories.map((cat) => (
               <Link
-                key={cat.name}
-                href={cat.href}
+                key={cat.slug}
+                href={`/products?category=${cat.slug}`}
                 className="block py-2 text-sm hover:text-[#FF9900]"
                 onClick={() => setMenuOpen(false)}
               >

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { searchProducts } from '@/lib/cj';
+import { searchProducts, getNavCategories } from '@/lib/cj';
 import ProductCard from '@/components/ProductCard';
 import { slugify } from '@/lib/format';
 import { ChevronRight, Truck, Shield, RotateCcw, Headphones } from 'lucide-react';
@@ -19,15 +19,39 @@ const heroBanners = [
   },
 ];
 
-const categories = [
-  { name: 'Electronics', icon: '📱', href: '/products?category=electronics' },
-  { name: 'Fashion', icon: '👗', href: '/products?category=fashion' },
-  { name: 'Home & Garden', icon: '🏡', href: '/products?category=home' },
-  { name: 'Sports', icon: '⚽', href: '/products?category=sports' },
-  { name: 'Beauty', icon: '💄', href: '/products?category=beauty' },
-  { name: 'Toys', icon: '🧸', href: '/products?category=toys' },
-  { name: 'Tools', icon: '🔧', href: '/products?category=tools' },
-  { name: 'Pets', icon: '🐾', href: '/products?category=pets' },
+// Pick a fitting emoji for a CJ category based on keywords in its name.
+function iconForCategory(name = '') {
+  const n = name.toLowerCase();
+  const map = [
+    [['phone', 'electronic', 'computer', 'office', 'tech'], '📱'],
+    [['women', 'men', 'cloth', 'fashion', 'apparel', 'underwear'], '👗'],
+    [['shoe', 'bag', 'luggage'], '👜'],
+    [['home', 'garden', 'furniture', 'kitchen', 'household'], '🏡'],
+    [['sport', 'outdoor', 'fitness'], '⚽'],
+    [['beauty', 'health', 'hair', 'makeup', 'cosmetic'], '💄'],
+    [['toy', 'kid', 'baby', 'game'], '🧸'],
+    [['tool', 'hardware', 'improvement'], '🔧'],
+    [['pet', 'animal'], '🐾'],
+    [['jewel', 'watch', 'accessor'], '💍'],
+    [['car', 'auto', 'motor', 'vehicle'], '🚗'],
+    [['light', 'lamp'], '💡'],
+  ];
+  for (const [keys, icon] of map) {
+    if (keys.some((k) => n.includes(k))) return icon;
+  }
+  return '🛍️';
+}
+
+// Fallback grid shown only if the CJ category tree can't be loaded.
+const FALLBACK_CATEGORIES = [
+  { name: 'Electronics', slug: 'electronics' },
+  { name: 'Fashion', slug: 'fashion' },
+  { name: 'Home & Garden', slug: 'home-garden' },
+  { name: 'Sports', slug: 'sports' },
+  { name: 'Beauty', slug: 'beauty' },
+  { name: 'Toys', slug: 'toys' },
+  { name: 'Tools', slug: 'tools' },
+  { name: 'Pets', slug: 'pets' },
 ];
 
 const perks = [
@@ -51,6 +75,17 @@ async function getFeaturedProducts() {
 
 export default async function HomePage() {
   const featured = await getFeaturedProducts();
+
+  // Real CJ categories (limited to 8 for the grid), with a graceful fallback.
+  let navCategories = [];
+  try {
+    navCategories = await getNavCategories();
+  } catch {
+    navCategories = [];
+  }
+  const categories = (navCategories.length > 0 ? navCategories : FALLBACK_CATEGORIES)
+    .slice(0, 8)
+    .map((c) => ({ name: c.name, slug: c.slug, icon: iconForCategory(c.name) }));
 
   return (
     <div>
@@ -126,8 +161,8 @@ export default async function HomePage() {
         <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
           {categories.map((cat) => (
             <Link
-              key={cat.name}
-              href={cat.href}
+              key={cat.slug}
+              href={`/products?category=${cat.slug}`}
               className="flex flex-col items-center gap-2 bg-white rounded-2xl border border-gray-200 p-4 hover:border-[#FF9900] hover:shadow-md transition-all group"
             >
               <span className="text-3xl group-hover:scale-110 transition-transform">{cat.icon}</span>

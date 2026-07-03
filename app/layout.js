@@ -2,6 +2,7 @@ import './globals.css';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
+import { getNavCategories } from '@/lib/cj';
 
 export const metadata = {
   title: {
@@ -17,11 +18,19 @@ export const metadata = {
   },
 };
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  // Load the real CJ Dropshipping categories so the nav tabs match their names.
+  let categories = [];
+  try {
+    categories = await getNavCategories();
+  } catch {
+    categories = [];
+  }
+
   return (
     <html lang="en">
       <body className="min-h-screen flex flex-col bg-gray-50 antialiased">
-        <Navbar />
+        <Navbar categories={categories} />
         <CartDrawer />
         <main className="flex-1">{children}</main>
         <Footer />
