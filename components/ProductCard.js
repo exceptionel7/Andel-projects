@@ -11,7 +11,6 @@ export default function ProductCard({ product }) {
 
   const {
     pid,
-    slug,
     productNameEn,
     sellPrice,
     originalPrice,
@@ -40,7 +39,7 @@ export default function ProductCard({ product }) {
 
   return (
     <Link
-      href={`/products/${slug || pid}`}
+      href={`/products/${pid}`}
       className="group flex flex-col bg-white rounded-2xl border border-gray-200 hover:shadow-lg hover:border-[#FF9900]/30 transition-all duration-200 overflow-hidden"
     >
       {/* Image */}
