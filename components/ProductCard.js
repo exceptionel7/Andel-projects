@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Star, ShoppingCart, Heart } from 'lucide-react';
 import { useCartStore } from '@/lib/store';
-import { formatPrice, truncate } from '@/lib/format';
+import { formatPrice, parsePrice, truncate } from '@/lib/format';
 
 export default function ProductCard({ product }) {
   const addItem = useCartStore((s) => s.addItem);
@@ -20,8 +20,10 @@ export default function ProductCard({ product }) {
     reviewCount = 0,
   } = product;
 
-  const discount = originalPrice && originalPrice > sellPrice
-    ? Math.round(((originalPrice - sellPrice) / originalPrice) * 100)
+  const sellValue = parsePrice(sellPrice);
+  const originalValue = parsePrice(originalPrice);
+  const discount = originalValue && sellValue && originalValue > sellValue
+    ? Math.round(((originalValue - sellValue) / originalValue) * 100)
     : null;
 
   function handleAddToCart(e) {
@@ -31,7 +33,7 @@ export default function ProductCard({ product }) {
       pid,
       variant_id: firstVariant?.vid || pid,
       name: productNameEn,
-      price: parseFloat(sellPrice),
+      price: sellValue ?? 0,
       image: productImage,
       variant: firstVariant?.variantNameEn || null,
     });
@@ -103,7 +105,7 @@ export default function ProductCard({ product }) {
           <span className="text-lg font-bold text-gray-900">
             {formatPrice(sellPrice)}
           </span>
-          {originalPrice && originalPrice > sellPrice && (
+          {originalValue && sellValue && originalValue > sellValue && (
             <span className="text-xs text-gray-400 line-through">
               {formatPrice(originalPrice)}
             </span>
