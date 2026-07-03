@@ -1,0 +1,14 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NEXT_TELEMETRY_DISABLED = "1"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Redirect Stripe webhook URL to our Next.js API route
+# Stripe is configured to POST to /.netlify/functions/stripe-webhook
+# We handle it in the Netlify Function below
