@@ -10,9 +10,17 @@ export default function ProductDetail({ product, shippingUS, shippingCA }) {
   const addItem = useCartStore((s) => s.addItem);
 
   const variants = product.variants || product.variantList || [];
-  const images = product.productImageSet
-    ? product.productImageSet.split(',').filter(Boolean)
-    : [product.productImage].filter(Boolean);
+
+  // CJ may return productImageSet as an array OR a comma-separated string
+  // (or omit it entirely). Handle every shape so a single product never crashes.
+  const rawImages = Array.isArray(product.productImageSet)
+    ? product.productImageSet
+    : typeof product.productImageSet === 'string'
+      ? product.productImageSet.split(',')
+      : [];
+  const images = (rawImages.length > 0 ? rawImages : [product.productImage])
+    .map((s) => (typeof s === 'string' ? s.trim() : ''))
+    .filter(Boolean);
 
   const [selectedVariant, setSelectedVariant] = useState(variants[0] || null);
   const [activeImage, setActiveImage] = useState(images[0] || null);
