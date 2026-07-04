@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
-import { createCJOrder, buildCJOrderPayload, getProductById } from '@/lib/cj';
+import {
+  createCJOrder,
+  buildCJOrderPayload,
+  getProductById,
+  payCJOrderByBalance,
+} from '@/lib/cj';
 import { createClient } from '@supabase/supabase-js';
 import { sendOrderConfirmation } from '@/lib/email';
 
@@ -144,7 +149,24 @@ async function fulfillOrder(session) {
     result.steps.cj = 'created';
     console.log(`[Fulfillment] ✅ CJ order created: ${cjOrder?.orderId}`);
 
-    // Update Supabase with CJ order ID
+    let newStatus = 'confirmed';
+
+    // Auto-pay the CJ order from your wallet balance so CJ ships it without
+    // any manual step. Disable by setting CJ_AUTO_PAY=false in the env.
+    if (cjOrder?.orderId && process.env.CJ_AUTO_PAY !== 'false') {
+      try {
+        await payCJOrderByBalance(cjOrder.orderId);
+        result.steps.cjPayment = 'paid';
+        newStatus = 'paid';
+        console.log(`[Fulfillment] 💰 CJ order paid: ${cjOrder.orderId}`);
+      } catch (payErr) {
+        result.steps.cjPayment = `error: ${payErr.message}`;
+        newStatus = `pay_error: ${String(payErr.message).slice(0, 300)}`;
+        console.error('[Fulfillment] CJ payment error:', payErr.message);
+      }
+    }
+
+    // Update Supabase with CJ order ID + resulting status
     if (process.env.NEXT_PUBLIC_SUPABASE_URL && cjOrder?.orderId) {
       const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -152,7 +174,7 @@ async function fulfillOrder(session) {
       );
       await supabase
         .from('orders')
-        .update({ cj_order_id: cjOrder.orderId, status: 'confirmed' })
+        .update({ cj_order_id: cjOrder.orderId, status: newStatus })
         .eq('id', order.id);
     }
   } catch (err) {
