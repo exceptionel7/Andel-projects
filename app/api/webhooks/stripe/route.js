@@ -158,6 +158,20 @@ async function fulfillOrder(session) {
   } catch (err) {
     result.steps.cj = `error: ${err.message}`;
     console.error('[Fulfillment] CJ order error:', err.message);
+    // Surface the CJ error in Supabase (status column) so it's readable
+    // straight from the table, without digging into logs or Stripe.
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      try {
+        const supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL,
+          process.env.SUPABASE_SERVICE_ROLE_KEY
+        );
+        await supabase
+          .from('orders')
+          .update({ status: `cj_error: ${String(err.message).slice(0, 400)}` })
+          .eq('id', order.id);
+      } catch {}
+    }
   }
 
   // 3. Send confirmation email
