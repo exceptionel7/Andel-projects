@@ -100,16 +100,30 @@ export default async function HomePage() {
     try {
       const pinned = await getProductById(HERO_PINNED_PID);
       if (pinned?.pid) {
-        const mapped = { ...pinned, slug: slugify(pinned.productNameEn || pinned.pid) };
+        // product/query may expose the image via productImage OR productImageSet
+        // (array or comma-separated string) — pick the first valid one.
+        const pinnedImage =
+          pinned.productImage ||
+          (Array.isArray(pinned.productImageSet)
+            ? pinned.productImageSet[0]
+            : typeof pinned.productImageSet === 'string'
+              ? pinned.productImageSet.split(',')[0]
+              : null);
+        const mapped = {
+          ...pinned,
+          productImage: pinnedImage,
+          slug: slugify(pinned.productNameEn || pinned.pid),
+        };
         heroProducts = [mapped, ...featured.filter((p) => p.pid !== pinned.pid)].slice(0, 3);
       }
     } catch {}
   }
 
+  // Index 0 (the pinned product) gets the most visible front card.
   const heroCardPositions = [
-    'top-0 right-2 md:right-6 rotate-[5deg] z-10',
-    'top-24 left-1/2 -translate-x-1/2 z-20',
     'bottom-0 left-2 md:left-6 -rotate-[5deg] z-30',
+    'top-24 left-1/2 -translate-x-1/2 z-20',
+    'top-0 right-2 md:right-6 rotate-[5deg] z-10',
   ];
 
   return (
@@ -162,6 +176,7 @@ export default async function HomePage() {
                             src={p.productImage}
                             alt={p.productNameEn}
                             fill
+                            unoptimized
                             className="object-contain p-2"
                             sizes="224px"
                           />
