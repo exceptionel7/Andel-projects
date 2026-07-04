@@ -88,10 +88,15 @@ Client remplit le checkout
 
 ## Variables d'environnement (.env.local)
 
+> ⚠️ **Sécurité :** ne mets JAMAIS de vraies clés/secrets dans ce fichier `SETUP.md`
+> (il est versionné dans Git). Les valeurs ci-dessous ne sont que des exemples.
+> Les vraies valeurs vont uniquement dans `.env.local` (ignoré par Git) et dans les
+> variables d'environnement de Vercel.
+
 ```env
-# CJ Dropshipping (déjà configuré)
-CJ_EMAIL=CJ3607216@api
-CJ_API_KEY=308cf40d48e74957ac3715b1632587d2
+# CJ Dropshipping (ne jamais committer les vraies valeurs !)
+CJ_EMAIL=votre_email_cj@api
+CJ_API_KEY=votre_cle_api_cj
 
 # Stripe
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
