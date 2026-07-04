@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { searchProducts, getNavCategories } from '@/lib/cj';
+import { searchProducts, getNavCategories, getProductById } from '@/lib/cj';
 import ProductCard from '@/components/ProductCard';
-import { slugify } from '@/lib/format';
-import { ChevronRight, Truck, Shield, RotateCcw, Headphones } from 'lucide-react';
+import { slugify, formatPrice, truncate } from '@/lib/format';
+import { retailPrice } from '@/lib/pricing';
+import { ChevronRight, Truck, Shield, RotateCcw, Headphones, Star } from 'lucide-react';
 
 // Revalidate every 6 hours
 export const revalidate = 21600;
@@ -14,7 +15,7 @@ const heroBanners = [
     subtitle: 'Top deals on Electronics, Fashion, Home & more',
     cta: 'Shop Now',
     href: '/products',
-    bg: 'from-[#131921] to-[#232f3e]',
+    bg: 'from-[#12332E] to-[#1B4A42]',
     accent: '#FF9900',
   },
 ];
@@ -87,10 +88,34 @@ export default async function HomePage() {
     .slice(0, 8)
     .map((c) => ({ name: c.name, slug: c.slug, icon: iconForCategory(c.name) }));
 
+  // ── Hero floating product cards ────────────────────────────────
+  // To feature a SPECIFIC product (e.g. the white adapter) in the first
+  // floating card, paste its CJ product id (pid) below. You can find the pid
+  // in the product URL on your own site: /products/<pid>.
+  // Leave it empty ('') to simply show your top featured products.
+  const HERO_PINNED_PID = '';
+
+  let heroProducts = featured.slice(0, 3);
+  if (HERO_PINNED_PID) {
+    try {
+      const pinned = await getProductById(HERO_PINNED_PID);
+      if (pinned?.pid) {
+        const mapped = { ...pinned, slug: slugify(pinned.productNameEn || pinned.pid) };
+        heroProducts = [mapped, ...featured.filter((p) => p.pid !== pinned.pid)].slice(0, 3);
+      }
+    } catch {}
+  }
+
+  const heroCardPositions = [
+    'top-0 right-2 md:right-6 rotate-[5deg] z-10',
+    'top-24 left-1/2 -translate-x-1/2 z-20',
+    'bottom-0 left-2 md:left-6 -rotate-[5deg] z-30',
+  ];
+
   return (
     <div>
       {/* Hero */}
-      <section className="bg-gradient-to-br from-[#131921] to-[#232f3e] text-white">
+      <section className="bg-gradient-to-br from-[#12332E] to-[#1B4A42] text-white">
         <div className="max-w-7xl mx-auto px-6 py-16 md:py-24 flex flex-col md:flex-row items-center gap-10">
           <div className="flex-1 space-y-6">
             <p className="text-[#FF9900] text-sm font-semibold uppercase tracking-widest">
@@ -119,16 +144,62 @@ export default async function HomePage() {
               </Link>
             </div>
           </div>
-          <div className="flex-1 flex justify-center">
-            <div className="relative w-72 h-72 md:w-80 md:h-80">
-              <Image
-                src="/logo.jpg"
-                alt="Exceptionel"
-                fill
-                className="object-contain drop-shadow-2xl"
-                priority
-              />
-            </div>
+          <div className="flex-1 w-full flex justify-center">
+            {heroProducts.length > 0 ? (
+              <div className="relative w-full max-w-md h-[420px] md:h-[460px]">
+                {heroProducts.map((p, i) => {
+                  const price = retailPrice(p.sellPrice);
+                  const rating = Math.round(p.rating || 4.6);
+                  return (
+                    <Link
+                      key={p.pid}
+                      href={`/products/${p.pid}`}
+                      className={`absolute w-44 md:w-56 ${heroCardPositions[i]} bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/20 rounded-2xl p-4 shadow-2xl transition-all hover:scale-[1.03]`}
+                    >
+                      <div className="relative w-full aspect-square rounded-xl bg-white overflow-hidden mb-3">
+                        {p.productImage ? (
+                          <Image
+                            src={p.productImage}
+                            alt={p.productNameEn}
+                            fill
+                            className="object-contain p-2"
+                            sizes="224px"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">
+                            No image
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-sm font-semibold text-white leading-snug line-clamp-2">
+                        {truncate(p.productNameEn, 42)}
+                      </p>
+                      {price != null && (
+                        <p className="text-[#FF9900] font-bold mt-1">{formatPrice(price)}</p>
+                      )}
+                      <div className="flex mt-1.5 gap-0.5">
+                        {Array.from({ length: 5 }).map((_, s) => (
+                          <Star
+                            key={s}
+                            className={`w-3 h-3 ${s < rating ? 'fill-[#FF9900] text-[#FF9900]' : 'text-white/30'}`}
+                          />
+                        ))}
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="relative w-72 h-72 md:w-80 md:h-80">
+                <Image
+                  src="/logo.jpg"
+                  alt="Exceptionel"
+                  fill
+                  className="object-contain drop-shadow-2xl"
+                  priority
+                />
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -197,7 +268,7 @@ export default async function HomePage() {
 
       {/* CTA Banner */}
       <section className="max-w-7xl mx-auto px-6 py-12">
-        <div className="bg-gradient-to-r from-[#131921] to-[#232f3e] rounded-3xl p-10 text-center text-white">
+        <div className="bg-gradient-to-r from-[#12332E] to-[#1B4A42] rounded-3xl p-10 text-center text-white">
           <h2 className="text-3xl font-extrabold mb-3">Ready to find something exceptional?</h2>
           <p className="text-gray-300 mb-6">Thousands of products. Fast shipping. Guaranteed satisfaction.</p>
           <Link

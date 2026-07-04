@@ -41,7 +41,7 @@ export default function Navbar({ categories = [] }) {
       }`}
     >
       {/* Top bar */}
-      <div className="bg-[#131921] text-white text-xs text-center py-1 px-4">
+      <div className="bg-[#12332E] text-white text-xs text-center py-1 px-4">
         Free shipping on orders over $35 · USA &amp; Canada
       </div>
 
@@ -153,7 +153,7 @@ export default function Navbar({ categories = [] }) {
       )}
 
       {/* Category strip */}
-      <nav className="hidden md:block bg-[#232f3e] text-white">
+      <nav className="hidden md:block bg-[#1B4A42] text-white">
         <div className="max-w-7xl mx-auto px-4 flex items-center gap-6 h-10 text-sm overflow-x-auto">
           <Link href="/products" className="whitespace-nowrap hover:text-[#FF9900] transition-colors font-medium">
             All Products
