@@ -94,21 +94,25 @@ export default async function HomePage() {
   // in the product URL on your own site: /products/<pid>.
   // Leave it empty ('') to simply show your top featured products.
   const HERO_PINNED_PID = '1502953210804449280';
+  // Optional: force a specific image for the pinned hero card. Upload your own
+  // photo to the /public folder (e.g. /public/adapter.jpg) and set this to
+  // '/adapter.jpg'. Leave empty to use the product's CJ image.
+  const HERO_PINNED_IMAGE = '';
 
   let heroProducts = featured.slice(0, 3);
   if (HERO_PINNED_PID) {
     try {
       const pinned = await getProductById(HERO_PINNED_PID);
       if (pinned?.pid) {
-        // product/query may expose the image via productImage OR productImageSet
-        // (array or comma-separated string) — pick the first valid one.
+        // Prefer the gallery images (same CDN as the working list thumbnails),
+        // then the main productImage, then an uploaded override.
+        const gallery = Array.isArray(pinned.productImageSet)
+          ? pinned.productImageSet
+          : typeof pinned.productImageSet === 'string'
+            ? pinned.productImageSet.split(',')
+            : [];
         const pinnedImage =
-          pinned.productImage ||
-          (Array.isArray(pinned.productImageSet)
-            ? pinned.productImageSet[0]
-            : typeof pinned.productImageSet === 'string'
-              ? pinned.productImageSet.split(',')[0]
-              : null);
+          HERO_PINNED_IMAGE || gallery[0] || pinned.productImage || null;
         const mapped = {
           ...pinned,
           productImage: pinnedImage,
