@@ -125,6 +125,8 @@ export default async function HomePage() {
     'top-24 left-1/2 -translate-x-1/2 z-20',
     'top-0 right-2 md:right-6 rotate-[5deg] z-10',
   ];
+  // Staggered (negative) delays so the cards bob out of sync for a lively feel.
+  const heroFloatDelays = ['0s', '-2s', '-4s'];
 
   return (
     <div>
@@ -168,7 +170,8 @@ export default async function HomePage() {
                     <Link
                       key={p.pid}
                       href={`/products/${p.pid}`}
-                      className={`absolute w-44 md:w-56 ${heroCardPositions[i]} bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/20 rounded-2xl p-4 shadow-2xl transition-all hover:scale-[1.03]`}
+                      style={{ animationDelay: heroFloatDelays[i] }}
+                      className={`hero-float absolute w-44 md:w-56 ${heroCardPositions[i]} bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/20 rounded-2xl p-4 shadow-2xl transition-colors hover:scale-[1.03]`}
                     >
                       <div className="relative w-full aspect-square rounded-xl bg-white overflow-hidden mb-3">
                         {p.productImage ? (
