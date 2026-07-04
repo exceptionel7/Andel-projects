@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
-import { createCJOrder, buildCJOrderPayload } from '@/lib/cj';
+import { createCJOrder, buildCJOrderPayload, getProductById } from '@/lib/cj';
 import { createClient } from '@supabase/supabase-js';
 import { sendOrderConfirmation } from '@/lib/email';
 
@@ -32,6 +32,29 @@ export async function POST(req) {
   }
 
   return NextResponse.json({ received: true });
+}
+
+// Ensure every cart item has a real CJ variant id (vid). Items added from a
+// product listing carry the pid as a fallback; look up the product and use its
+// first variant so CJ can actually create the order.
+async function resolveCartVariants(items) {
+  return Promise.all(
+    items.map(async (item) => {
+      if (item.variant_id && item.variant_id !== item.pid) return item;
+      try {
+        const product = await getProductById(item.pid);
+        const variants = product?.variants || product?.variantList || [];
+        const vid = variants[0]?.vid;
+        if (vid) return { ...item, variant_id: vid };
+      } catch (err) {
+        console.error(
+          `[Fulfillment] Could not resolve variant for pid ${item.pid}:`,
+          err.message
+        );
+      }
+      return item;
+    })
+  );
 }
 
 async function fulfillOrder(session) {
@@ -96,7 +119,10 @@ async function fulfillOrder(session) {
   }
 
   // 2. Create CJ order (automatic fulfillment)
-  const cjPayload = buildCJOrderPayload(order, cartItems);
+  // CJ requires a valid variant id (vid). Items added from a listing fall back
+  // to the pid, so resolve each product's real first variant before ordering.
+  const orderItems = await resolveCartVariants(cartItems);
+  const cjPayload = buildCJOrderPayload(order, orderItems);
   let cjOrder = null;
 
   try {
