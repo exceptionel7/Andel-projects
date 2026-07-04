@@ -93,7 +93,7 @@ export default async function HomePage() {
   // floating card, paste its CJ product id (pid) below. You can find the pid
   // in the product URL on your own site: /products/<pid>.
   // Leave it empty ('') to simply show your top featured products.
-  const HERO_PINNED_PID = '';
+  const HERO_PINNED_PID = '1502953210804449280';
 
   let heroProducts = featured.slice(0, 3);
   if (HERO_PINNED_PID) {
