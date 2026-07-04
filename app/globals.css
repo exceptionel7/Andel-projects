@@ -2,8 +2,8 @@
 
 :root {
   --color-primary: #FF9900;
-  --color-dark: #131921;
-  --color-nav: #232f3e;
+  --color-dark: #12332E;
+  --color-nav: #1B4A42;
 }
 
 * {
@@ -48,5 +48,29 @@ html {
 @media (min-width: 640px) {
   .product-grid {
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+}
+
+
+/* Floating hero cards animation */
+@keyframes heroFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-16px);
+  }
+}
+
+.hero-float {
+  animation: heroFloat 6s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Respect users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .hero-float {
+    animation: none;
   }
 }

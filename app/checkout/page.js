@@ -123,12 +123,13 @@ export default function CheckoutPage() {
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone *</label>
                 <input
                   name="phone"
                   type="tel"
                   value={form.phone}
                   onChange={handleChange}
+                  required
                   placeholder="+1 555 000 0000"
                   className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#FF9900] transition-colors"
                 />

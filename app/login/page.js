@@ -50,7 +50,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/">
-            <span className="text-3xl font-extrabold text-[#131921]">
+            <span className="text-3xl font-extrabold text-[#12332E]">
               Excep<span className="text-[#FF9900]">tionel</span>
             </span>
           </Link>

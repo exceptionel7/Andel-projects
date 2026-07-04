@@ -5,22 +5,32 @@ import Image from 'next/image';
 import { Star, ShoppingCart, Zap, Truck, Shield, ChevronDown, ChevronUp } from 'lucide-react';
 import { useCartStore } from '@/lib/store';
 import { formatPrice } from '@/lib/format';
+import { retailPrice } from '@/lib/pricing';
 
 export default function ProductDetail({ product, shippingUS, shippingCA }) {
   const addItem = useCartStore((s) => s.addItem);
 
   const variants = product.variants || product.variantList || [];
-  const images = product.productImageSet
-    ? product.productImageSet.split(',').filter(Boolean)
-    : [product.productImage].filter(Boolean);
+
+  // CJ may return productImageSet as an array OR a comma-separated string
+  // (or omit it entirely). Handle every shape so a single product never crashes.
+  const rawImages = Array.isArray(product.productImageSet)
+    ? product.productImageSet
+    : typeof product.productImageSet === 'string'
+      ? product.productImageSet.split(',')
+      : [];
+  const images = (rawImages.length > 0 ? rawImages : [product.productImage])
+    .map((s) => (typeof s === 'string' ? s.trim() : ''))
+    .filter(Boolean);
 
   const [selectedVariant, setSelectedVariant] = useState(variants[0] || null);
   const [activeImage, setActiveImage] = useState(images[0] || null);
   const [quantity, setQuantity] = useState(1);
   const [addedMsg, setAddedMsg] = useState(false);
 
-  const price = parseFloat(selectedVariant?.variantSellPrice || product.sellPrice || 0);
-  const originalPrice = parseFloat(selectedVariant?.variantOriginalPrice || product.originalPrice || 0);
+  // Retail (customer-facing) prices, including your profit margin.
+  const price = retailPrice(selectedVariant?.variantSellPrice || product.sellPrice) ?? 0;
+  const originalPrice = retailPrice(selectedVariant?.variantOriginalPrice || product.originalPrice) ?? 0;
   const discount = originalPrice > price
     ? Math.round(((originalPrice - price) / originalPrice) * 100)
     : null;

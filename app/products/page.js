@@ -1,8 +1,7 @@
-import { searchProducts, getCategories } from '@/lib/cj';
+import { searchProducts, getProductsByCategorySlug } from '@/lib/cj';
 import ProductCard from '@/components/ProductCard';
 import { slugify } from '@/lib/format';
 import Link from 'next/link';
-import { SlidersHorizontal } from 'lucide-react';
 
 export const metadata = { title: 'All Products' };
 export const revalidate = 3600;
@@ -11,28 +10,47 @@ export default async function ProductsPage({ searchParams }) {
   const params = await searchParams;
   const page = parseInt(params?.page || '1', 10);
   const query = params?.q || '';
-  const categoryId = params?.categoryId || '';
+  const category = params?.category || '';       // first-level CJ category slug
+  const categoryId = params?.categoryId || '';   // direct CJ leaf category id
 
   let products = [];
   let total = 0;
+  let categoryName = '';
+  // Category browsing merges several CJ sub-categories, so it isn't paginated.
+  let paginated = true;
 
   try {
-    const data = await searchProducts({
-      pageNum: page,
-      pageSize: 24,
-      ...(query && { productNameEn: query }),
-      ...(categoryId && { categoryId }),
-    });
-    products = (data?.list || []).map((p) => ({
-      ...p,
-      slug: slugify(p.productNameEn || p.pid),
-    }));
-    total = data?.total || 0;
+    if (category) {
+      // Browse a real CJ top-level category by its slug.
+      const { list, categoryName: name } = await getProductsByCategorySlug(category, {
+        limit: 48,
+      });
+      products = list.map((p) => ({
+        ...p,
+        slug: slugify(p.productNameEn || p.pid),
+      }));
+      total = products.length;
+      categoryName = name || '';
+      paginated = false;
+    } else {
+      const data = await searchProducts({
+        pageNum: page,
+        pageSize: 24,
+        ...(query && { productNameEn: query }),
+        ...(categoryId && { categoryId }),
+      });
+      products = (data?.list || []).map((p) => ({
+        ...p,
+        slug: slugify(p.productNameEn || p.pid),
+      }));
+      total = data?.total || 0;
+    }
   } catch (err) {
     console.error('CJ products error:', err.message);
   }
 
-  const totalPages = Math.ceil(total / 24);
+  const heading = categoryName || (query ? `Results for "${query}"` : 'All Products');
+  const totalPages = paginated ? Math.ceil(total / 24) : 1;
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
@@ -40,7 +58,7 @@ export default async function ProductsPage({ searchParams }) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            {query ? `Results for "${query}"` : 'All Products'}
+            {heading}
           </h1>
           {total > 0 && (
             <p className="text-sm text-gray-500 mt-1">{total.toLocaleString()} products found</p>

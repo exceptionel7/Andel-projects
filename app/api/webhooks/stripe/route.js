@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
-import { createCJOrder, buildCJOrderPayload } from '@/lib/cj';
+import { createCJOrder, buildCJOrderPayload, getProductById } from '@/lib/cj';
 import { createClient } from '@supabase/supabase-js';
 import { sendOrderConfirmation } from '@/lib/email';
 
@@ -20,21 +20,51 @@ export async function POST(req) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
   }
 
+  let debug = { handled: false, type: event.type };
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
     if (session.payment_status === 'paid') {
       try {
-        await fulfillOrder(session);
+        debug = await fulfillOrder(session);
       } catch (err) {
         console.error('Fulfillment error:', err.message);
+        debug = { handled: true, fatalError: err.message };
       }
+    } else {
+      debug = { handled: false, reason: `payment_status=${session.payment_status}` };
     }
   }
 
-  return NextResponse.json({ received: true });
+  // The debug field is only visible to Stripe (this endpoint requires a valid
+  // Stripe signature), so it's safe to surface fulfillment details here.
+  return NextResponse.json({ received: true, debug });
+}
+
+// Ensure every cart item has a real CJ variant id (vid). Items added from a
+// product listing carry the pid as a fallback; look up the product and use its
+// first variant so CJ can actually create the order.
+async function resolveCartVariants(items) {
+  return Promise.all(
+    items.map(async (item) => {
+      if (item.variant_id && item.variant_id !== item.pid) return item;
+      try {
+        const product = await getProductById(item.pid);
+        const variants = product?.variants || product?.variantList || [];
+        const vid = variants[0]?.vid;
+        if (vid) return { ...item, variant_id: vid };
+      } catch (err) {
+        console.error(
+          `[Fulfillment] Could not resolve variant for pid ${item.pid}:`,
+          err.message
+        );
+      }
+      return item;
+    })
+  );
 }
 
 async function fulfillOrder(session) {
+  const result = { handled: true, steps: {} };
   const meta = session.metadata || {};
 
   let cartItems = [];
@@ -44,6 +74,7 @@ async function fulfillOrder(session) {
     throw new Error('Failed to parse cart_items');
   }
 
+  result.steps.itemCount = cartItems.length;
   if (!cartItems.length) throw new Error('No cart items found');
 
   // Build internal order
@@ -72,7 +103,7 @@ async function fulfillOrder(session) {
         process.env.SUPABASE_SERVICE_ROLE_KEY
       );
 
-      await supabase.from('orders').upsert({
+      const { error } = await supabase.from('orders').upsert({
         id: order.id,
         status: order.status,
         customer_name: order.shipping_name,
@@ -89,18 +120,28 @@ async function fulfillOrder(session) {
         items: cartItems,
       });
 
+      if (error) throw new Error(error.message);
+      result.steps.supabase = 'saved';
       console.log(`[Fulfillment] Order saved to Supabase: ${order.id}`);
     } catch (err) {
+      result.steps.supabase = `error: ${err.message}`;
       console.error('[Fulfillment] Supabase save error:', err.message);
     }
+  } else {
+    result.steps.supabase = 'skipped (missing Supabase env vars)';
   }
 
   // 2. Create CJ order (automatic fulfillment)
-  const cjPayload = buildCJOrderPayload(order, cartItems);
-  let cjOrder = null;
+  // CJ requires a valid variant id (vid). Items added from a listing fall back
+  // to the pid, so resolve each product's real first variant before ordering.
+  const orderItems = await resolveCartVariants(cartItems);
+  result.steps.variantIds = orderItems.map((i) => i.variant_id);
+  const cjPayload = buildCJOrderPayload(order, orderItems);
 
   try {
-    cjOrder = await createCJOrder(cjPayload);
+    const cjOrder = await createCJOrder(cjPayload);
+    result.steps.cjOrderId = cjOrder?.orderId || null;
+    result.steps.cj = 'created';
     console.log(`[Fulfillment] ✅ CJ order created: ${cjOrder?.orderId}`);
 
     // Update Supabase with CJ order ID
@@ -115,15 +156,32 @@ async function fulfillOrder(session) {
         .eq('id', order.id);
     }
   } catch (err) {
+    result.steps.cj = `error: ${err.message}`;
     console.error('[Fulfillment] CJ order error:', err.message);
+    // Surface the CJ error in Supabase (status column) so it's readable
+    // straight from the table, without digging into logs or Stripe.
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      try {
+        const supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL,
+          process.env.SUPABASE_SERVICE_ROLE_KEY
+        );
+        await supabase
+          .from('orders')
+          .update({ status: `cj_error: ${String(err.message).slice(0, 400)}` })
+          .eq('id', order.id);
+      } catch {}
+    }
   }
 
   // 3. Send confirmation email
   try {
     await sendOrderConfirmation({ order, items: cartItems });
+    result.steps.email = 'sent';
   } catch (err) {
+    result.steps.email = `error: ${err.message}`;
     console.error('[Email] Error:', err.message);
   }
 
-  return cjOrder;
+  return result;
 }

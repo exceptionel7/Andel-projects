@@ -11,6 +11,11 @@ const nextConfig = {
       // Generic CDN patterns
       { protocol: 'https', hostname: '**.cloudfront.net' },
       { protocol: 'https', hostname: '**.amazonaws.com' },
+      { protocol: 'https', hostname: '**.aliyuncs.com' },
+      // Catch-all: CJ product images come from many changing CDN hosts.
+      // Allowing any HTTPS host prevents next/image from crashing a product
+      // page when an image lives on an unlisted domain.
+      { protocol: 'https', hostname: '**' },
     ],
   },
 };

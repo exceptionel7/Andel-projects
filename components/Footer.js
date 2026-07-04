@@ -5,10 +5,10 @@ import Image from 'next/image';
 
 export default function Footer() {
   return (
-    <footer className="bg-[#131921] text-gray-300 mt-16">
+    <footer className="bg-[#12332E] text-gray-300 mt-16">
       {/* Back to top */}
       <div
-        className="bg-[#232f3e] text-white text-sm text-center py-3 cursor-pointer hover:bg-[#2d3a4a] transition-colors"
+        className="bg-[#1B4A42] text-white text-sm text-center py-3 cursor-pointer hover:bg-[#245b52] transition-colors"
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
       >
         Back to top

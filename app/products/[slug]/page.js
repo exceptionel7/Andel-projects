@@ -7,6 +7,20 @@ export const revalidate = 3600;
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
+
+  // The URL param is the CJ product id (pid) — look it up directly.
+  try {
+    const product = await getProductById(slug);
+    if (product?.productNameEn) {
+      return {
+        title: product.productNameEn,
+        description: product.productNameEn,
+        openGraph: { images: [product.productImage].filter(Boolean) },
+      };
+    }
+  } catch {}
+
+  // Fallback for legacy slug-based URLs.
   try {
     const data = await searchProducts({ pageNum: 1, pageSize: 50 });
     const products = data?.list || [];
@@ -17,10 +31,11 @@ export async function generateMetadata({ params }) {
       return {
         title: product.productNameEn,
         description: product.productNameEn,
-        openGraph: { images: [product.productImage] },
+        openGraph: { images: [product.productImage].filter(Boolean) },
       };
     }
   } catch {}
+
   return { title: 'Product' };
 }
 

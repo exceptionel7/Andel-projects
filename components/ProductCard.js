@@ -5,13 +5,13 @@ import Image from 'next/image';
 import { Star, ShoppingCart, Heart } from 'lucide-react';
 import { useCartStore } from '@/lib/store';
 import { formatPrice, truncate } from '@/lib/format';
+import { retailPrice } from '@/lib/pricing';
 
 export default function ProductCard({ product }) {
   const addItem = useCartStore((s) => s.addItem);
 
   const {
     pid,
-    slug,
     productNameEn,
     sellPrice,
     originalPrice,
@@ -21,8 +21,11 @@ export default function ProductCard({ product }) {
     reviewCount = 0,
   } = product;
 
-  const discount = originalPrice && originalPrice > sellPrice
-    ? Math.round(((originalPrice - sellPrice) / originalPrice) * 100)
+  // Retail (customer-facing) prices, including your profit margin.
+  const sellValue = retailPrice(sellPrice);
+  const originalValue = retailPrice(originalPrice);
+  const discount = originalValue && sellValue && originalValue > sellValue
+    ? Math.round(((originalValue - sellValue) / originalValue) * 100)
     : null;
 
   function handleAddToCart(e) {
@@ -32,7 +35,7 @@ export default function ProductCard({ product }) {
       pid,
       variant_id: firstVariant?.vid || pid,
       name: productNameEn,
-      price: parseFloat(sellPrice),
+      price: sellValue ?? 0,
       image: productImage,
       variant: firstVariant?.variantNameEn || null,
     });
@@ -40,7 +43,7 @@ export default function ProductCard({ product }) {
 
   return (
     <Link
-      href={`/products/${slug || pid}`}
+      href={`/products/${pid}`}
       className="group flex flex-col bg-white rounded-2xl border border-gray-200 hover:shadow-lg hover:border-[#FF9900]/30 transition-all duration-200 overflow-hidden"
     >
       {/* Image */}
@@ -102,11 +105,11 @@ export default function ProductCard({ product }) {
         {/* Price */}
         <div className="flex items-baseline gap-2 mt-auto">
           <span className="text-lg font-bold text-gray-900">
-            {formatPrice(sellPrice)}
+            {formatPrice(sellValue)}
           </span>
-          {originalPrice && originalPrice > sellPrice && (
+          {originalValue && sellValue && originalValue > sellValue && (
             <span className="text-xs text-gray-400 line-through">
-              {formatPrice(originalPrice)}
+              {formatPrice(originalValue)}
             </span>
           )}
         </div>
