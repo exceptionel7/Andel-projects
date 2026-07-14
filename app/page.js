@@ -6,8 +6,9 @@ import { slugify, formatPrice, truncate } from '@/lib/format';
 import { retailPrice } from '@/lib/pricing';
 import { ChevronRight, Truck, Shield, RotateCcw, Headphones, Star } from 'lucide-react';
 
-// Revalidate every 6 hours
-export const revalidate = 21600;
+// Revalidate every 30 minutes so the homepage recovers quickly if a CJ
+// request fails during generation (instead of caching an empty page for hours).
+export const revalidate = 1800;
 
 const heroBanners = [
   {
