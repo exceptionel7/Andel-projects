@@ -1,6 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
+    // Load images directly from the source CDN instead of through Vercel's
+    // image optimizer. CJ's image hosts frequently fail server-side fetches
+    // (hotlink protection) and the optimizer quota can run out on the free
+    // plan — both cause broken product images. Unoptimized = reliable display.
+    unoptimized: true,
     remotePatterns: [
       // CJ Dropshipping CDN
       { protocol: 'https', hostname: '**.cjdropshipping.com' },
