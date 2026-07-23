@@ -6,9 +6,11 @@ import { slugify, formatPrice, truncate } from '@/lib/format';
 import { retailPrice } from '@/lib/pricing';
 import { ChevronRight, Truck, Shield, RotateCcw, Headphones, Star } from 'lucide-react';
 
-// Revalidate every 30 minutes so the homepage recovers quickly if a CJ
-// request fails during generation (instead of caching an empty page for hours).
-export const revalidate = 1800;
+// Render the homepage on every request so the hero + featured products always
+// reflect live CJ data (with automatic retry). This avoids caching an empty
+// homepage (logo fallback) when a CJ request momentarily fails. Fine for the
+// current traffic; we can reintroduce caching with a smarter strategy if load grows.
+export const dynamic = 'force-dynamic';
 
 const heroBanners = [
   {
