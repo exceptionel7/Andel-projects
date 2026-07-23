@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { searchProducts, getCategories, getProductById } from '@/lib/cj';
+import { searchProducts, getCategories, getProductById, getNavCategories } from '@/lib/cj';
 
 // Always run live (never cached) so we see the real-time CJ response.
 export const dynamic = 'force-dynamic';
@@ -34,6 +34,18 @@ export async function GET() {
     result.categories = { ok: true, count: Array.isArray(cats) ? cats.length : 0 };
   } catch (err) {
     result.categories = { ok: false, error: err.message };
+  }
+
+  // 3b. Navigation categories (what the navbar tabs use)
+  try {
+    const nav = await getNavCategories();
+    result.navCategories = {
+      ok: true,
+      count: nav.length,
+      names: nav.slice(0, 12).map((c) => c.name),
+    };
+  } catch (err) {
+    result.navCategories = { ok: false, error: err.message };
   }
 
   // 4. Env presence (booleans only — never expose secret values)
