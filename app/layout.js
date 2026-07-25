@@ -1,4 +1,5 @@
 import './globals.css';
+import Script from 'next/script';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
@@ -34,6 +35,14 @@ export default async function RootLayout({ children }) {
         <CartDrawer />
         <main className="flex-1">{children}</main>
         <Footer />
+
+        {/* Exceptionel AI advisor chat widget */}
+        <Script
+          src="https://exceptionel-ai.vercel.app/public/embed.js"
+          data-api="https://exceptionel-ai.vercel.app"
+          data-title="Conseiller Exceptionel"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
