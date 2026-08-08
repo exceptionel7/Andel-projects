@@ -6,11 +6,11 @@ import { slugify, formatPrice, truncate } from '@/lib/format';
 import { retailPrice } from '@/lib/pricing';
 import { ChevronRight, Truck, Shield, RotateCcw, Headphones, Star } from 'lucide-react';
 
-// Render the homepage on every request so the hero + featured products always
-// reflect live CJ data (with automatic retry). This avoids caching an empty
-// homepage (logo fallback) when a CJ request momentarily fails. Fine for the
-// current traffic; we can reintroduce caching with a smarter strategy if load grows.
-export const dynamic = 'force-dynamic';
+// Cache the homepage and refresh it every 10 minutes (ISR). This means CJ is
+// called ~once per 10 min instead of on every visitor — which prevents CJ from
+// freezing our API access due to too many requests. The automatic retry in the
+// CJ client keeps generation reliable so products don't fall back to the logo.
+export const revalidate = 600;
 
 const heroBanners = [
   {
