@@ -36,11 +36,13 @@ export default async function RootLayout({ children }) {
         <main className="flex-1">{children}</main>
         <Footer />
 
-        {/* Exceptionel AI advisor chat widget */}
+        {/* Exceptionel AI advisor chat widget (single instance — no duplicates) */}
         <Script
           src="https://exceptionel-ai.vercel.app/public/embed.js"
+          data-merchant="f0b52c5e-ce48-49d7-b41f-619983c1b8c5"
           data-api="https://exceptionel-ai.vercel.app"
-          data-title="Conseiller Exceptionel"
+          data-title="Exceptionel Advisor"
+          data-accent="#7c5cff"
           strategy="afterInteractive"
         />
       </body>
